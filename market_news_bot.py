@@ -352,7 +352,7 @@ def fetch_headlines(url: str, max_items: int = 25) -> list:
                 t = cdata.group(1).strip()
             # Decode HTML entities
             t = t.replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">")
-            t = t.replace("&quot;", '"').replace("&#39;", "'").replace("&nbsp;", " ")
+            t = t.replace("&quot;", '"').replace("&#39;", "'").replace("&apos;", "'").replace("&nbsp;", " ")
             t = re.sub(r"&#\d+;", "", t)
             # Strip any remaining tags
             t = re.sub(r"<[^>]+>", "", t)
