@@ -3,7 +3,7 @@ name: NSE Market Report
 on:
   schedule:
     # 4:00 PM IST = 10:30 UTC (Mon-Fri)
-    - cron: "30 10 * * 1-5"
+    - cron: "30 22 * * 1-5"
   workflow_dispatch: {}
 
 jobs:
