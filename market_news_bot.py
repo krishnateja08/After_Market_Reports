@@ -494,6 +494,19 @@ NSE_SPECIALIST_FEEDS = {
     ],
 }
 
+# FIX — US equivalents so "regulatory" and "earnings" don't fall back to Indian feeds
+# when the bot is run for the NYSE/NASDAQ market.
+NYSE_SPECIALIST_FEEDS = {
+    "earnings":     [
+        "https://feeds.reuters.com/reuters/companyNews",
+        "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10001147",
+    ],
+    "regulatory":   [
+        "https://feeds.reuters.com/reuters/businessNews",
+        "https://www.investing.com/rss/news_25.rss",
+    ],
+}
+
 
 # ─── Analysis helpers ─────────────────────────────────────────────────────────
 
@@ -942,8 +955,19 @@ def get_sector_buzz(sector_rows: list, top_n: int = 2) -> dict:
 
 def get_specialist_headlines(category: str, max_items: int = 5,
                               region: str | None = None) -> list:
-    """Fetch specialist headlines for a named category."""
-    feeds = NSE_SPECIALIST_FEEDS.get(category, [])
+    """Fetch specialist headlines for a named category.
+
+    FIX — `region` now actually controls which feed source is used.
+    "us" routes to NYSE_SPECIALIST_FEEDS (falling back to an empty list if the
+    category has no US source, e.g. fii_dii/bulk_block/insider/ipo/corp_actions
+    are India-only concepts). Anything else (including None, for backward
+    compatibility) keeps the original NSE behaviour.
+    """
+    if region == "us":
+        feeds = NYSE_SPECIALIST_FEEDS.get(category, [])
+    else:
+        feeds = NSE_SPECIALIST_FEEDS.get(category, [])
+
     kw_map = {
         "fii_dii":      ["fii", "dii", "foreign institutional", "domestic institutional",
                          "net buy", "net sell", "flows"],
@@ -2074,8 +2098,10 @@ def run(config: dict, market: str = "both"):
         insider_lines    = get_specialist_headlines("insider")      if is_nse else []
         ipo_lines        = get_specialist_headlines("ipo")          if is_nse else []
         corp_lines       = get_specialist_headlines("corp_actions") if is_nse else []
-        reg_lines        = get_specialist_headlines("regulatory")
-        earn_lines       = get_specialist_headlines("earnings")
+        # FIX — pass region so regulatory/earnings pull from the correct market's
+        # feeds instead of always defaulting to Indian sources.
+        reg_lines        = get_specialist_headlines("regulatory", region=region)
+        earn_lines       = get_specialist_headlines("earnings", region=region)
 
         # New: breadth, key events, pre-market levels, US futures
         region_str       = "india" if is_nse else "us"
